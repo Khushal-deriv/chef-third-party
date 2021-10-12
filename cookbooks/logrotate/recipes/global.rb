@@ -1,6 +1,6 @@
 #
 # Cookbook:: logrotate
-# Resource:: global
+# Recipe:: default
 #
 # Copyright:: 2009-2019, Chef Software, Inc.
 #
@@ -17,75 +17,14 @@
 # limitations under the License.
 #
 
-unified_mode true
+include_recipe 'logrotate::default'
 
-include ::Logrotate::Cookbook::LogrotateHelpers
+parsed_configuration = CookbookLogrotate::LogrotateConfiguration.from_hash(node['logrotate']['global'].to_hash)
 
-property :config_file, String,
-          default: '/etc/logrotate.conf'
-
-property :template_owner, String,
-          default: 'root'
-
-property :template_group, String,
-          default: 'root'
-
-property :template_mode, String,
-          default: '0644'
-
-property :cookbook, String,
-          default: 'logrotate'
-
-property :template_name, String,
-          default: 'logrotate-global.erb'
-
-property :options, [String, Array],
-          default: %w(weekly dateext),
-          coerce: proc { |p| options_from(p.is_a?(Array) ? p : p.split) }
-
-property :includes, [String, Array],
-          default: [],
-          coerce: proc { |p| p.is_a?(Array) ? p : p.split }
-
-property :parameters, Hash,
-          default: { 'rotate' => 4, 'create' => nil },
-          coerce: proc { |p| parameters_from(p) }
-
-property :paths, Hash,
-          default: {},
-          coerce: proc { |p| paths_from(p) }
-
-property :scripts, Hash,
-          default: {},
-          coerce: proc { |p| scripts_from(p) }
-
-action :create do
-  template new_resource.config_file do
-    cookbook new_resource.cookbook
-    source new_resource.template_name
-
-    owner new_resource.template_owner
-    group new_resource.template_group
-    mode new_resource.template_mode
-
-    sensitive new_resource.sensitive
-
-    variables(
-      includes: new_resource.includes,
-      options: new_resource.options,
-      parameters: new_resource.parameters,
-      paths: new_resource.paths,
-      scripts: new_resource.scripts
-    )
-
-    helpers(Logrotate::Cookbook::TemplateHelpers)
-
-    action :create
-  end
-end
-
-action :delete do
-  file new_resource.config_file do
-    action :delete
-  end
+template '/etc/logrotate.conf' do
+  source 'logrotate-global.erb'
+  mode   '0644'
+  variables(
+    configuration: parsed_configuration
+  )
 end
