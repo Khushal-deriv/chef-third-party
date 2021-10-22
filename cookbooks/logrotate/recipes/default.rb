@@ -1,8 +1,8 @@
 #
 # Cookbook:: logrotate
-# Recipe:: default
+# Attribute:: default
 #
-# Copyright:: 2009-2019, Chef Software, Inc.
+# Copyright:: 2013-2019, Chef Software, Inc
 # Copyright:: 2015-2019, Steven Danna
 # Copyright:: 2016-2019, Bloomberg Finance L.P.
 #
@@ -18,26 +18,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-return if platform?('windows')
 
-package node['logrotate']['package']['name'] do
+default['logrotate']['package'] = {
+  'name' => 'logrotate',
+  'source' => nil,
+  'version' => nil,
   # TODO: remove provider option in next major release
-  provider node['logrotate']['package']['provider'] if node['logrotate']['package']['provider']
-  source node['logrotate']['package']['source'] if node['logrotate']['package']['source']
-  version node['logrotate']['package']['version'] if node['logrotate']['package']['version']
-  action node['logrotate']['package']['action']
-end
+  'provider' => nil,
+  'action' => :upgrade,
+}
 
-directory node['logrotate']['directory'] do
-  owner 'root'
-  group node['root_group']
-  mode '0755'
-end
+default['logrotate']['directory'] = '/etc/logrotate.d'
+default['logrotate']['cron']['install'] = platform?('solaris2') || platform?('aix')
+default['logrotate']['cron']['name'] = 'logrotate'
+default['logrotate']['cron']['command'] = '/usr/sbin/logrotate /etc/logrotate.conf'
+default['logrotate']['cron']['minute'] = 35
+default['logrotate']['cron']['hour'] = 2
 
-if node['logrotate']['cron']['install']
-  cron node['logrotate']['cron']['name'] do
-    minute node['logrotate']['cron']['minute']
-    hour node['logrotate']['cron']['hour']
-    command node['logrotate']['cron']['command']
-  end
-end
+default['logrotate']['global'] = {
+  'weekly' => true,
+  'rotate' => 4,
+  'create' => '',
+
+  '/var/log/wtmp' => {
+    'missingok' => true,
+    'monthly' => true,
+    'create' => '0664 root utmp',
+    'rotate' => 1,
+  },
+
+  '/var/log/btmp' => {
+    'missingok' => true,
+    'monthly' => true,
+    'create' => '0600 root utmp',
+    'rotate' => 1,
+  },
+}
