@@ -1,19 +1,14 @@
 require 'spec_helper'
 
-describe 'logrotate_global' do
-  step_into :logrotate_resources
-  platform 'centos'
-
-  recipe do
-    include_recipe 'test::app'
-  end
+describe 'test::resources' do
+  let(:chef_run) { ChefSpec::SoloRunner.new.converge(described_recipe) }
 
   context 'tomcat-myapp' do
     it 'creates appropriate logrotate config' do
       expect(chef_run).to enable_logrotate_app('tomcat-myapp').with(
         create: '644 root adm',
         frequency: 'daily',
-        path: '"/var/log/tomcat/myapp.log"',
+        path: '/var/log/tomcat/myapp.log',
         rotate: 30
       )
     end
@@ -24,7 +19,7 @@ describe 'logrotate_global' do
       expect(chef_run).to enable_logrotate_app('tomcat-myapp-multi-path').with(
         create: '644 root adm',
         frequency: 'daily',
-        path: '"/opt/local/tomcat/catalina.out" "/var/log/tomcat/myapp-multi-path.log"',
+        path: %w(/var/log/tomcat/myapp.log /opt/local/tomcat/catalina.out),
         rotate: 7
       )
     end
@@ -41,9 +36,9 @@ describe 'logrotate_global' do
       expect(chef_run).to enable_logrotate_app('tomcat-myapp-custom-options').with(
         create: '644 root adm',
         frequency: 'daily',
-        path: '"/var/log/tomcat/myapp-custom-options.log"',
+        path: '/var/log/tomcat/myapp.log',
         rotate: 30,
-        options: %w(delaycompress missingok),
+        options: %w(missingok delaycompress),
         firstaction: 'echo "hi"'
       )
     end
@@ -52,8 +47,9 @@ describe 'logrotate_global' do
   context 'tomcat-myapp-sharedscripts' do
     it 'creates appropriate logrotate config' do
       expect(chef_run).to enable_logrotate_app('tomcat-myapp-sharedscripts').with(
-        options: %w(compress copytruncate delaycompress missingok notifempty sharedscripts),
-        path: '"/var/log/tomcat/myapp-sharedscripts.log"'
+        sharedscripts: true,
+        options: %w(missingok compress delaycompress copytruncate notifempty),
+        path: '/var/log/tomcat/myapp.log'
       )
     end
   end
