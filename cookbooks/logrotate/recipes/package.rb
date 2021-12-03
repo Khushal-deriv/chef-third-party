@@ -17,8 +17,6 @@
 # limitations under the License.
 #
 
-include_recipe 'logrotate::default'
-
 unified_mode true
 
 property :packages, [String, Array],
